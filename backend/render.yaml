@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: borbi-backend-v2
+    runtime: node
+    plan: starter
+    region: frankfurt
+    rootDir: .
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Africa/Dakar
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CHIFFREMENT_CLE_AES
+        sync: false
+      - key: URL_FRONTEND
+        value: https://bor-bi-tech.vercel.app
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODELE
+        value: claude-haiku-4-5-20251001
+      - key: WAVE_API_KEY
+        sync: false
+      - key: WAVE_WEBHOOK_SECRET
+        sync: false

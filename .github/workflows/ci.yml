@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  verifications:
+    name: Typecheck & build
+    runs-on: ubuntu-latest
+    env:
+      # Variables minimales pour que `env.ts` valide sans planter en CI
+      DATABASE_URL: postgresql://utilisateur:motdepasse@localhost:5432/borbi
+      REDIS_URL: redis://default:motdepasse_fictif@fictif.upstash.io:6379
+      JWT_SECRET: ci_secret_de_64_caracteres_minimum_pour_satisfaire_la_validation_zod
+      JWT_REFRESH_SECRET: ci_refresh_secret_de_64_caracteres_minimum_pour_satisfaire_zod_xx
+      CHIFFREMENT_CLE_AES: '0000000000000000000000000000000000000000000000000000000000000000'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Générer le client Prisma
+        run: npm --workspace backend run prisma:generate
+
+      - name: Vérifier les types (shared + backend + frontend)
+        run: npm run typecheck
+
+      - name: Build complet
+        run: npm run build
