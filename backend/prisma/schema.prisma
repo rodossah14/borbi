@@ -72,6 +72,8 @@ enum ActionAudit {
   CONNEXION
   DECONNEXION
   CREATION_COMPTE
+  TENTATIVE_INSCRIPTION
+  INSCRIPTION_VALIDEE
   CHANGEMENT_MOT_DE_PASSE
   CHANGEMENT_EMAIL
   CREATION_ETABLISSEMENT
@@ -101,6 +103,7 @@ model Utilisateur {
   pointsFidelite      Int      @default(0)
   estVerifie          Boolean  @default(false)
   estSuspendu         Boolean  @default(false)
+  codeParrainage      String   @unique // ex: BORBI-SN-A3K7
   idParrain           String?
   parrain             Utilisateur?  @relation("Parrainage", fields: [idParrain], references: [id])
   filleuls            Utilisateur[] @relation("Parrainage")
