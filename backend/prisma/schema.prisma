@@ -1,0 +1,230 @@
+// Bor-Bi Tech — schéma Prisma initial Étape 1
+// Couvre : utilisateurs, établissements, produits, commandes,
+// transactions signées OHADA, fidélité, journal d'audit append-only.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum RoleUtilisateur {
+  CLIENT
+  COMMERCANT
+  LIVREUR
+  ADMINISTRATEUR
+}
+
+enum TypeEtablissement {
+  BOUTIQUE
+  RESTAURANT
+  HOTEL
+  ENTREPOT
+  KIOSQUE
+  PHARMACIE
+  ATELIER_ARTISAN
+  AGENCE_TRANSPORT
+  PRESTATAIRE_SERVICE
+}
+
+enum NiveauFidelite {
+  BRONZE
+  ARGENT
+  OR
+  PLATINE
+}
+
+enum StatutCommande {
+  PANIER
+  CONFIRMEE
+  EN_PREPARATION
+  EN_LIVRAISON
+  LIVREE
+  ANNULEE
+  LITIGE
+}
+
+enum TypeTransaction {
+  VENTE
+  LIVRAISON
+  TRANSFERT_NATIONAL
+  TRANSFERT_INTERNATIONAL
+  REMBOURSEMENT
+  ABONNEMENT_MENSUEL
+}
+
+enum StatutTransaction {
+  EN_ATTENTE
+  VALIDEE
+  ECHOUEE
+  REMBOURSEE
+  LITIGE
+}
+
+enum ActionAudit {
+  CONNEXION
+  DECONNEXION
+  CREATION_COMPTE
+  CHANGEMENT_MOT_DE_PASSE
+  CHANGEMENT_EMAIL
+  CREATION_ETABLISSEMENT
+  MODIFICATION_ETABLISSEMENT
+  CREATION_TRANSACTION
+  VALIDATION_TRANSACTION
+  ECHEC_OTP
+  ACCES_GOD_MODE
+  DECLENCHEMENT_SOS
+}
+
+// ----------------------------------------------------------------------------
+// Modèles
+// ----------------------------------------------------------------------------
+
+model Utilisateur {
+  id                  String   @id @default(cuid())
+  telephone           String   @unique // format E.164
+  email               String?  @unique
+  motDePasseHash      String
+  nomComplet          String
+  // Code pays ISO-2 (SN, CI, etc.) — stocké en string pour rester souple
+  codePays            String
+  languePreferee      String   @default("fr")
+  roles               RoleUtilisateur[]
+  niveauFidelite      NiveauFidelite @default(BRONZE)
+  pointsFidelite      Int      @default(0)
+  estVerifie          Boolean  @default(false)
+  estSuspendu         Boolean  @default(false)
+  idParrain           String?
+  parrain             Utilisateur?  @relation("Parrainage", fields: [idParrain], references: [id])
+  filleuls            Utilisateur[] @relation("Parrainage")
+  etablissements      Etablissement[]
+  transactionsEmises  Transaction[] @relation("TransactionsEmises")
+  transactionsRecues  Transaction[] @relation("TransactionsRecues")
+  commandes           Commande[]
+  evenementsAudit     EvenementAudit[]
+  dateCreation        DateTime @default(now())
+  dateMiseAJour       DateTime @updatedAt
+
+  @@index([codePays])
+  @@index([niveauFidelite])
+}
+
+model Etablissement {
+  id              String   @id @default(cuid())
+  idProprietaire  String
+  proprietaire    Utilisateur @relation(fields: [idProprietaire], references: [id], onDelete: Cascade)
+  type            TypeEtablissement
+  nom             String
+  codePays        String
+  ville           String
+  adresse         String?
+  latitude        Float?
+  longitude       Float?
+  numeroNinea     String?
+  estActif        Boolean  @default(true)
+  produits        Produit[]
+  commandes       Commande[]
+  dateCreation    DateTime @default(now())
+  dateMiseAJour   DateTime @updatedAt
+
+  @@index([idProprietaire])
+  @@index([codePays, ville])
+  @@index([type])
+}
+
+model Produit {
+  id              String   @id @default(cuid())
+  idEtablissement String
+  etablissement   Etablissement @relation(fields: [idEtablissement], references: [id], onDelete: Cascade)
+  nom             String
+  description     String?
+  prixUnitaireFcfa Int     // toujours stocké en XOF, converti à l'affichage
+  stockDisponible Int      @default(0)
+  seuilAlerteStock Int     @default(5)
+  estDisponible   Boolean  @default(true)
+  urlsPhotos      String[]
+  lignesCommande  LigneCommande[]
+  dateCreation    DateTime @default(now())
+  dateMiseAJour   DateTime @updatedAt
+
+  @@index([idEtablissement])
+}
+
+model Commande {
+  id              String   @id @default(cuid())
+  numeroCommande  String   @unique // ex: BB-2026-000123 lisible humain
+  idClient        String
+  client          Utilisateur @relation(fields: [idClient], references: [id])
+  idEtablissement String
+  etablissement   Etablissement @relation(fields: [idEtablissement], references: [id])
+  statut          StatutCommande @default(PANIER)
+  montantTotalFcfa Int
+  lignes          LigneCommande[]
+  transactions    Transaction[]
+  dateCreation    DateTime @default(now())
+  dateMiseAJour   DateTime @updatedAt
+
+  @@index([idClient])
+  @@index([idEtablissement])
+  @@index([statut])
+}
+
+model LigneCommande {
+  id              String   @id @default(cuid())
+  idCommande      String
+  commande        Commande @relation(fields: [idCommande], references: [id], onDelete: Cascade)
+  idProduit       String
+  produit         Produit  @relation(fields: [idProduit], references: [id])
+  quantite        Int
+  prixUnitaireFcfa Int     // figé au moment de la commande
+}
+
+model Transaction {
+  id                String   @id @default(cuid())
+  type              TypeTransaction
+  statut            StatutTransaction @default(EN_ATTENTE)
+  montantBrutXof    Int
+  montantBrutLocal  Int      // dans la devise du payeur
+  codeDeviseLocal   String   @default("XOF")
+  commissionXof     Int
+  montantNetXof     Int
+  empreinteSha256   String   // R-OHADA — signature de la transaction
+  idEmetteur        String
+  emetteur          Utilisateur @relation("TransactionsEmises", fields: [idEmetteur], references: [id])
+  idDestinataire    String?
+  destinataire      Utilisateur? @relation("TransactionsRecues", fields: [idDestinataire], references: [id])
+  idCommande        String?
+  commande          Commande?    @relation(fields: [idCommande], references: [id])
+  donneesFournisseur Json?       // payload brut renvoyé par Wave / CinetPay
+  dateCreation      DateTime @default(now())
+
+  @@index([idEmetteur])
+  @@index([idDestinataire])
+  @@index([statut])
+  @@index([dateCreation])
+}
+
+// Journal d'audit append-only (R25). Pas de champ updatedAt ni méthode
+// de mise à jour : seules les insertions sont autorisées au niveau applicatif.
+model EvenementAudit {
+  id              String   @id @default(cuid())
+  action          ActionAudit
+  idUtilisateur   String?
+  utilisateur     Utilisateur? @relation(fields: [idUtilisateur], references: [id])
+  adresseIp       String?
+  userAgent       String?
+  donnees         Json
+  empreinteSha256 String   // chaînée à l'événement précédent pour intégrité
+  horodatage      DateTime @default(now())
+
+  @@index([action])
+  @@index([idUtilisateur])
+  @@index([horodatage])
+}
