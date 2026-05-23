@@ -15,7 +15,7 @@
     "dev:back": "npm --workspace backend run dev",
     "dev:front": "npm --workspace frontend run dev",
     "build": "npm --workspace shared run build && npm --workspace backend run build && npm --workspace frontend run build",
-    "typecheck": "npm --workspace shared run typecheck && npm --workspace backend run typecheck && npm --workspace frontend run typecheck",
+    "typecheck": "npm --workspace shared run build && npm --workspace backend run typecheck && npm --workspace frontend run typecheck",
     "lint": "npm --workspace backend run lint && npm --workspace frontend run lint",
     "prisma:generate": "npm --workspace backend run prisma:generate",
     "prisma:migrate": "npm --workspace backend run prisma:migrate"
