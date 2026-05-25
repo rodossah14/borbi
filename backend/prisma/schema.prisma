@@ -191,6 +191,10 @@ model Produit {
   stockMinimum    Int      @default(5)
   estDisponible   Boolean  @default(true)
   imageUrls       String[]
+  // Compteur de consultations (incrémenté par obtenirProduit, atomique
+  // côté Postgres via prisma { increment: 1 }). Utile pour le scoring
+  // de pertinence et les analytics commerçant.
+  vues            Int      @default(0)
   lignesCommande  LigneCommande[]
   dateCreation    DateTime @default(now())
   dateMiseAJour   DateTime @updatedAt

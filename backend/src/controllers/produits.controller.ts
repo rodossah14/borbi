@@ -388,11 +388,12 @@ export async function obtenirProduit(requete: Request, reponse: Response): Promi
     throw new ErreurMetier('Produit indisponible', 404, 'PRODUIT_INTROUVABLE');
   }
 
-  // TODO Fichier 6 — décommenter quand le champ Produit.vues sera ajouté :
-  // await prisma.produit.update({
-  //   where: { id: idProduit },
-  //   data: { vues: { increment: 1 } },
-  // });
+  // Incrément atomique du compteur de vues — Postgres fait le ADD côté
+  // serveur, pas de race condition entre requêtes concurrentes
+  await prisma.produit.update({
+    where: { id: idProduit },
+    data: { vues: { increment: 1 } },
+  });
 
   reponse.status(200).json({
     produit: {
@@ -404,6 +405,7 @@ export async function obtenirProduit(requete: Request, reponse: Response): Promi
       stockActuel: produit.stockActuel,
       stockMinimum: produit.stockMinimum,
       imageUrls: produit.imageUrls,
+      vues: produit.vues + 1, // refletter l'incrément qu'on vient de faire
       estDisponible: produit.estDisponible,
       dateCreation: produit.dateCreation,
       etablissement: {
