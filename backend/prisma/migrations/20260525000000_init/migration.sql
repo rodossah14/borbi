@@ -75,11 +75,13 @@ CREATE TABLE "Produit" (
     "idEtablissement" TEXT NOT NULL,
     "nom" TEXT NOT NULL,
     "description" TEXT,
-    "prixUnitaireFcfa" INTEGER NOT NULL,
-    "stockDisponible" INTEGER NOT NULL DEFAULT 0,
-    "seuilAlerteStock" INTEGER NOT NULL DEFAULT 5,
+    "prixFCFA" INTEGER NOT NULL,
+    "categorie" TEXT NOT NULL,
+    "stockInitial" INTEGER NOT NULL,
+    "stockActuel" INTEGER NOT NULL DEFAULT 0,
+    "stockMinimum" INTEGER NOT NULL DEFAULT 5,
     "estDisponible" BOOLEAN NOT NULL DEFAULT true,
-    "urlsPhotos" TEXT[],
+    "imageUrls" TEXT[],
     "dateCreation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "dateMiseAJour" TIMESTAMP(3) NOT NULL,
 
@@ -174,6 +176,9 @@ CREATE INDEX "Etablissement_statut_idx" ON "Etablissement"("statut");
 
 -- CreateIndex
 CREATE INDEX "Produit_idEtablissement_idx" ON "Produit"("idEtablissement");
+
+-- CreateIndex
+CREATE INDEX "Produit_categorie_idx" ON "Produit"("categorie");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Commande_numeroCommande_key" ON "Commande"("numeroCommande");

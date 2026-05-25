@@ -178,16 +178,25 @@ model Produit {
   etablissement   Etablissement @relation(fields: [idEtablissement], references: [id], onDelete: Cascade)
   nom             String
   description     String?
-  prixUnitaireFcfa Int     // toujours stocké en XOF, converti à l'affichage
-  stockDisponible Int      @default(0)
-  seuilAlerteStock Int     @default(5)
+  // Toujours stocké en XOF, converti à l'affichage selon la devise du client
+  prixFCFA        Int
+  // Catégorie produit (alimentation, vêtements, électronique, etc.).
+  // Texte libre pour l'instant — à normaliser via taxonomie quand le catalogue
+  // sera suffisamment dense pour justifier des facets.
+  categorie       String
+  // Stock à la création — snapshot immuable. Nécessaire pour calculer la
+  // vélocité de vente et l'alerte de rupture J-7.
+  stockInitial    Int
+  stockActuel     Int      @default(0)
+  stockMinimum    Int      @default(5)
   estDisponible   Boolean  @default(true)
-  urlsPhotos      String[]
+  imageUrls       String[]
   lignesCommande  LigneCommande[]
   dateCreation    DateTime @default(now())
   dateMiseAJour   DateTime @updatedAt
 
   @@index([idEtablissement])
+  @@index([categorie])
 }
 
 model Commande {
