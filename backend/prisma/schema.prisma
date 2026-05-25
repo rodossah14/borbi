@@ -28,10 +28,20 @@ enum TypeEtablissement {
   HOTEL
   ENTREPOT
   KIOSQUE
+  SHOWROOM
+  PRESTATAIRE
   PHARMACIE
-  ATELIER_ARTISAN
-  AGENCE_TRANSPORT
-  PRESTATAIRE_SERVICE
+  ARTISAN
+}
+
+// ACTIF : en service. EN_PAUSE : fermé temporairement (vacances, travaux).
+// SUSPENDU : sanction admin (litige, fraude). SUPPRIME : soft delete R80,
+// récupérable 30 jours via la date de suppression.
+enum StatutEtablissement {
+  ACTIF
+  EN_PAUSE
+  SUSPENDU
+  SUPPRIME
 }
 
 enum NiveauFidelite {
@@ -78,6 +88,13 @@ enum ActionAudit {
   CHANGEMENT_EMAIL
   CREATION_ETABLISSEMENT
   MODIFICATION_ETABLISSEMENT
+  BASCULEMENT_STATUT_ETABLISSEMENT
+  SUPPRESSION_ETABLISSEMENT
+  RESTAURATION_ETABLISSEMENT
+  AJOUT_PRODUIT
+  MODIFICATION_PRODUIT
+  MISE_A_JOUR_STOCK
+  ALERTE_STOCK
   CREATION_TRANSACTION
   VALIDATION_TRANSACTION
   ECHEC_OTP
@@ -103,6 +120,9 @@ model Utilisateur {
   pointsFidelite      Int      @default(0)
   estVerifie          Boolean  @default(false)
   estSuspendu         Boolean  @default(false)
+  // Score de confiance vendeur (0-100). Initialement 100, ajusté par
+  // les évaluations clients, les litiges et la régularité des livraisons.
+  scoreConfiance      Int      @default(100)
   codeParrainage      String   @unique // ex: BORBI-SN-A3K7
   idParrain           String?
   parrain             Utilisateur?  @relation("Parrainage", fields: [idParrain], references: [id])
@@ -124,14 +144,23 @@ model Etablissement {
   idProprietaire  String
   proprietaire    Utilisateur @relation(fields: [idProprietaire], references: [id], onDelete: Cascade)
   type            TypeEtablissement
+  statut          StatutEtablissement @default(ACTIF)
   nom             String
+  description     String?
   codePays        String
   ville           String
   adresse         String?
+  telephone       String?
+  // Horaires d'ouverture sous forme JSON libre, ex:
+  // { "lundi": "08:00-19:00", "mardi": "08:00-19:00", "dimanche": "ferme" }
+  horaires        Json?
+  logoUrl         String?
   latitude        Float?
   longitude       Float?
   numeroNinea     String?
-  estActif        Boolean  @default(true)
+  // R80 — soft delete : SUPPRIME + dateSuppression permettent récupération
+  // pendant 30 jours par un job cron, puis purge effective.
+  dateSuppression DateTime?
   produits        Produit[]
   commandes       Commande[]
   dateCreation    DateTime @default(now())
@@ -140,6 +169,7 @@ model Etablissement {
   @@index([idProprietaire])
   @@index([codePays, ville])
   @@index([type])
+  @@index([statut])
 }
 
 model Produit {
@@ -148,16 +178,29 @@ model Produit {
   etablissement   Etablissement @relation(fields: [idEtablissement], references: [id], onDelete: Cascade)
   nom             String
   description     String?
-  prixUnitaireFcfa Int     // toujours stocké en XOF, converti à l'affichage
-  stockDisponible Int      @default(0)
-  seuilAlerteStock Int     @default(5)
+  // Toujours stocké en XOF, converti à l'affichage selon la devise du client
+  prixFCFA        Int
+  // Catégorie produit (alimentation, vêtements, électronique, etc.).
+  // Texte libre pour l'instant — à normaliser via taxonomie quand le catalogue
+  // sera suffisamment dense pour justifier des facets.
+  categorie       String
+  // Stock à la création — snapshot immuable. Nécessaire pour calculer la
+  // vélocité de vente et l'alerte de rupture J-7.
+  stockInitial    Int
+  stockActuel     Int      @default(0)
+  stockMinimum    Int      @default(5)
   estDisponible   Boolean  @default(true)
-  urlsPhotos      String[]
+  imageUrls       String[]
+  // Compteur de consultations (incrémenté par obtenirProduit, atomique
+  // côté Postgres via prisma { increment: 1 }). Utile pour le scoring
+  // de pertinence et les analytics commerçant.
+  vues            Int      @default(0)
   lignesCommande  LigneCommande[]
   dateCreation    DateTime @default(now())
   dateMiseAJour   DateTime @updatedAt
 
   @@index([idEtablissement])
+  @@index([categorie])
 }
 
 model Commande {

@@ -8,6 +8,8 @@ import { journal } from './config/logger';
 import { gestionnaireErreurs } from './middlewares/gestionnaireErreurs';
 import { limiteurGlobal } from './middlewares/limiteurRequetes';
 import { routesAuth } from './routes/auth.routes';
+import { routesEtablissements } from './routes/etablissements.routes';
+import { routesProduits } from './routes/produits.routes';
 import { routesSante } from './routes/sante.routes';
 
 /**
@@ -33,6 +35,8 @@ export function construireApplication(): Express {
 
   app.use('/api', routesSante);
   app.use('/api/v1/auth', routesAuth);
+  app.use('/api/v1/etablissements', routesEtablissements);
+  app.use('/api/v1/produits', routesProduits);
 
   // Toujours le dernier middleware monté
   app.use(gestionnaireErreurs);

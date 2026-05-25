@@ -2,7 +2,10 @@
 CREATE TYPE "RoleUtilisateur" AS ENUM ('CLIENT', 'COMMERCANT', 'LIVREUR', 'ADMINISTRATEUR');
 
 -- CreateEnum
-CREATE TYPE "TypeEtablissement" AS ENUM ('BOUTIQUE', 'RESTAURANT', 'HOTEL', 'ENTREPOT', 'KIOSQUE', 'PHARMACIE', 'ATELIER_ARTISAN', 'AGENCE_TRANSPORT', 'PRESTATAIRE_SERVICE');
+CREATE TYPE "TypeEtablissement" AS ENUM ('BOUTIQUE', 'RESTAURANT', 'HOTEL', 'ENTREPOT', 'KIOSQUE', 'SHOWROOM', 'PRESTATAIRE', 'PHARMACIE', 'ARTISAN');
+
+-- CreateEnum
+CREATE TYPE "StatutEtablissement" AS ENUM ('ACTIF', 'EN_PAUSE', 'SUSPENDU', 'SUPPRIME');
 
 -- CreateEnum
 CREATE TYPE "NiveauFidelite" AS ENUM ('BRONZE', 'ARGENT', 'OR', 'PLATINE');
@@ -17,7 +20,7 @@ CREATE TYPE "TypeTransaction" AS ENUM ('VENTE', 'LIVRAISON', 'TRANSFERT_NATIONAL
 CREATE TYPE "StatutTransaction" AS ENUM ('EN_ATTENTE', 'VALIDEE', 'ECHOUEE', 'REMBOURSEE', 'LITIGE');
 
 -- CreateEnum
-CREATE TYPE "ActionAudit" AS ENUM ('CONNEXION', 'DECONNEXION', 'CREATION_COMPTE', 'TENTATIVE_INSCRIPTION', 'INSCRIPTION_VALIDEE', 'CHANGEMENT_MOT_DE_PASSE', 'CHANGEMENT_EMAIL', 'CREATION_ETABLISSEMENT', 'MODIFICATION_ETABLISSEMENT', 'CREATION_TRANSACTION', 'VALIDATION_TRANSACTION', 'ECHEC_OTP', 'ACCES_GOD_MODE', 'DECLENCHEMENT_SOS');
+CREATE TYPE "ActionAudit" AS ENUM ('CONNEXION', 'DECONNEXION', 'CREATION_COMPTE', 'TENTATIVE_INSCRIPTION', 'INSCRIPTION_VALIDEE', 'CHANGEMENT_MOT_DE_PASSE', 'CHANGEMENT_EMAIL', 'CREATION_ETABLISSEMENT', 'MODIFICATION_ETABLISSEMENT', 'BASCULEMENT_STATUT_ETABLISSEMENT', 'SUPPRESSION_ETABLISSEMENT', 'RESTAURATION_ETABLISSEMENT', 'AJOUT_PRODUIT', 'MODIFICATION_PRODUIT', 'MISE_A_JOUR_STOCK', 'ALERTE_STOCK', 'CREATION_TRANSACTION', 'VALIDATION_TRANSACTION', 'ECHEC_OTP', 'ACCES_GOD_MODE', 'DECLENCHEMENT_SOS');
 
 -- CreateTable
 CREATE TABLE "Utilisateur" (
@@ -33,6 +36,7 @@ CREATE TABLE "Utilisateur" (
     "pointsFidelite" INTEGER NOT NULL DEFAULT 0,
     "estVerifie" BOOLEAN NOT NULL DEFAULT false,
     "estSuspendu" BOOLEAN NOT NULL DEFAULT false,
+    "scoreConfiance" INTEGER NOT NULL DEFAULT 100,
     "codeParrainage" TEXT NOT NULL,
     "idParrain" TEXT,
     "dateCreation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -46,14 +50,19 @@ CREATE TABLE "Etablissement" (
     "id" TEXT NOT NULL,
     "idProprietaire" TEXT NOT NULL,
     "type" "TypeEtablissement" NOT NULL,
+    "statut" "StatutEtablissement" NOT NULL DEFAULT 'ACTIF',
     "nom" TEXT NOT NULL,
+    "description" TEXT,
     "codePays" TEXT NOT NULL,
     "ville" TEXT NOT NULL,
     "adresse" TEXT,
+    "telephone" TEXT,
+    "horaires" JSONB,
+    "logoUrl" TEXT,
     "latitude" DOUBLE PRECISION,
     "longitude" DOUBLE PRECISION,
     "numeroNinea" TEXT,
-    "estActif" BOOLEAN NOT NULL DEFAULT true,
+    "dateSuppression" TIMESTAMP(3),
     "dateCreation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "dateMiseAJour" TIMESTAMP(3) NOT NULL,
 
@@ -66,11 +75,13 @@ CREATE TABLE "Produit" (
     "idEtablissement" TEXT NOT NULL,
     "nom" TEXT NOT NULL,
     "description" TEXT,
-    "prixUnitaireFcfa" INTEGER NOT NULL,
-    "stockDisponible" INTEGER NOT NULL DEFAULT 0,
-    "seuilAlerteStock" INTEGER NOT NULL DEFAULT 5,
+    "prixFCFA" INTEGER NOT NULL,
+    "categorie" TEXT NOT NULL,
+    "stockInitial" INTEGER NOT NULL,
+    "stockActuel" INTEGER NOT NULL DEFAULT 0,
+    "stockMinimum" INTEGER NOT NULL DEFAULT 5,
     "estDisponible" BOOLEAN NOT NULL DEFAULT true,
-    "urlsPhotos" TEXT[],
+    "imageUrls" TEXT[],
     "dateCreation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "dateMiseAJour" TIMESTAMP(3) NOT NULL,
 
@@ -161,7 +172,13 @@ CREATE INDEX "Etablissement_codePays_ville_idx" ON "Etablissement"("codePays", "
 CREATE INDEX "Etablissement_type_idx" ON "Etablissement"("type");
 
 -- CreateIndex
+CREATE INDEX "Etablissement_statut_idx" ON "Etablissement"("statut");
+
+-- CreateIndex
 CREATE INDEX "Produit_idEtablissement_idx" ON "Produit"("idEtablissement");
+
+-- CreateIndex
+CREATE INDEX "Produit_categorie_idx" ON "Produit"("categorie");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Commande_numeroCommande_key" ON "Commande"("numeroCommande");
