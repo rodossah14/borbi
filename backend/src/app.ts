@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
@@ -6,6 +7,7 @@ import { env } from './config/env';
 import { journal } from './config/logger';
 import { gestionnaireErreurs } from './middlewares/gestionnaireErreurs';
 import { limiteurGlobal } from './middlewares/limiteurRequetes';
+import { routesAuth } from './routes/auth.routes';
 import { routesSante } from './routes/sante.routes';
 
 /**
@@ -23,10 +25,14 @@ export function construireApplication(): Express {
   app.use(cors({ origin: env.URL_FRONTEND, credentials: true }));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
+  // cookie-parser doit être monté AVANT toute route qui lit req.cookies
+  // (en particulier /api/v1/auth/rafraichir-token)
+  app.use(cookieParser());
   app.use(pinoHttp({ logger: journal }));
   app.use(limiteurGlobal);
 
   app.use('/api', routesSante);
+  app.use('/api/v1/auth', routesAuth);
 
   // Toujours le dernier middleware monté
   app.use(gestionnaireErreurs);
