@@ -11,10 +11,12 @@ export type TypeEtablissement =
   | 'HOTEL'
   | 'ENTREPOT'
   | 'KIOSQUE'
+  | 'SHOWROOM'
+  | 'PRESTATAIRE'
   | 'PHARMACIE'
-  | 'ATELIER_ARTISAN'
-  | 'AGENCE_TRANSPORT'
-  | 'PRESTATAIRE_SERVICE';
+  | 'ARTISAN';
+
+export type StatutEtablissement = 'ACTIF' | 'EN_PAUSE' | 'SUSPENDU' | 'SUPPRIME';
 
 export interface InformationsTypeEtablissement {
   type: TypeEtablissement;
@@ -25,13 +27,13 @@ export interface InformationsTypeEtablissement {
 }
 
 export const TYPES_ETABLISSEMENT: Record<TypeEtablissement, InformationsTypeEtablissement> = {
-  BOUTIQUE:           { type: 'BOUTIQUE',           libelle: 'Boutique',            iconeSymbol: 'storefront',    documentsRequis: ['NINEA', 'CNI'] },
-  RESTAURANT:         { type: 'RESTAURANT',         libelle: 'Restaurant',          iconeSymbol: 'restaurant',    documentsRequis: ['NINEA', 'CNI', 'Agrément hygiène'] },
-  HOTEL:              { type: 'HOTEL',              libelle: 'Hôtel / Auberge',     iconeSymbol: 'hotel',         documentsRequis: ['NINEA', 'Agrément tourisme'] },
-  ENTREPOT:           { type: 'ENTREPOT',           libelle: 'Entrepôt / Grossiste', iconeSymbol: 'warehouse',    documentsRequis: ['NINEA', 'CNI'] },
-  KIOSQUE:            { type: 'KIOSQUE',            libelle: 'Kiosque ambulant',    iconeSymbol: 'local_mall',    documentsRequis: ['CNI'] },
-  PHARMACIE:          { type: 'PHARMACIE',          libelle: 'Pharmacie',           iconeSymbol: 'pill',          documentsRequis: ['NINEA', 'CNI', 'Ordre des pharmaciens'] },
-  ATELIER_ARTISAN:    { type: 'ATELIER_ARTISAN',    libelle: 'Atelier d\'artisan',  iconeSymbol: 'handyman',      documentsRequis: ['CNI'] },
-  AGENCE_TRANSPORT:   { type: 'AGENCE_TRANSPORT',   libelle: 'Agence de transport', iconeSymbol: 'local_shipping', documentsRequis: ['NINEA', 'CNI', 'Licence transport'] },
-  PRESTATAIRE_SERVICE:{ type: 'PRESTATAIRE_SERVICE',libelle: 'Prestataire de services', iconeSymbol: 'work',     documentsRequis: ['CNI'] },
+  BOUTIQUE:    { type: 'BOUTIQUE',    libelle: 'Boutique',            iconeSymbol: 'storefront',     documentsRequis: ['NINEA', 'CNI'] },
+  RESTAURANT:  { type: 'RESTAURANT',  libelle: 'Restaurant',          iconeSymbol: 'restaurant',     documentsRequis: ['NINEA', 'CNI', 'Agrément hygiène'] },
+  HOTEL:       { type: 'HOTEL',       libelle: 'Hôtel / Auberge',     iconeSymbol: 'hotel',          documentsRequis: ['NINEA', 'Agrément tourisme'] },
+  ENTREPOT:    { type: 'ENTREPOT',    libelle: 'Entrepôt / Grossiste', iconeSymbol: 'warehouse',     documentsRequis: ['NINEA', 'CNI'] },
+  KIOSQUE:     { type: 'KIOSQUE',     libelle: 'Kiosque ambulant',    iconeSymbol: 'local_mall',     documentsRequis: ['CNI'] },
+  SHOWROOM:    { type: 'SHOWROOM',    libelle: 'Showroom',            iconeSymbol: 'storefront',     documentsRequis: ['NINEA', 'CNI'] },
+  PRESTATAIRE: { type: 'PRESTATAIRE', libelle: 'Prestataire de services', iconeSymbol: 'work',       documentsRequis: ['CNI'] },
+  PHARMACIE:   { type: 'PHARMACIE',   libelle: 'Pharmacie',           iconeSymbol: 'pill',           documentsRequis: ['NINEA', 'CNI', 'Ordre des pharmaciens'] },
+  ARTISAN:     { type: 'ARTISAN',     libelle: 'Artisan',             iconeSymbol: 'handyman',       documentsRequis: ['CNI'] },
 };
