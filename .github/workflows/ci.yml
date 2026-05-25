@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'claude/**']
+    branches: [main, 'claude/**', 'feat/**']
   pull_request:
     branches: [main]
 
@@ -34,6 +34,9 @@ jobs:
 
       - name: Vérifier les types (shared + backend + frontend)
         run: npm run typecheck
+
+      - name: Tests backend (Jest)
+        run: npm --workspace backend test
 
       - name: Build complet
         run: npm run build
